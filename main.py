@@ -15,7 +15,7 @@ from Route import Route
 import re
 from pynput.keyboard import Key, Listener
 import pyttsx3
-
+from waiting import wait
 from uiTest import MainWindow
 from sfparser import loadRunwayData, loadStarAndFixData
 from FlightPlan import FlightPlan
@@ -27,19 +27,53 @@ import util
 import taxiCoordGen
 import sessionparser
 
+#Harry
+engine = pyttsx3.init()
 
-class _TTS:   # https://stackoverflow.com/questions/56032027/pyttsx3-runandwait-method-gets-stuck
-    engine = None
-    def __init__(self) -> None:
-        self.engine = pyttsx3.init()
-    
-    def start(self, text):
-        self.engine.say(text)
-        self.engine.runAndWait()
+def callsigntts(oldcallsign):
+    airlines = {"RYR": "ryan air", "EZY": "eazy"}
+    value = airlines.get(oldcallsign[:3])
+    if value is not None:
+        print("Airline Found!")
+        newcallsign = str(value) + " "
+    else:
+        newcallsign = str(oldcallsign)
+    numsandletters = {"1": "one", "2": "two", "3": "tree", "4": "four", "5": "five", "6": "six", "7": "seven", "8": "eight", "9": "niner", "A": "alpha", "B": "bravo", "C": "charlie", "D": "delta", "E": "eko", "F": "foxtrot", "G": "golf", "H": "hotel", "I": "india", "J": "juliet", "K": "kilo", "L": "lima", "M": "mike", "N": "november", "O": "oscar", "P": "papa", "Q": "quebec", "R": "romeo", "S": "sierra", "T": "tango", "U": "uniform", "V": "victor", "W": "whiskey", "X": "x ray", "Y": "yankee", "Z": "zulu"}
+    try:
+        value = numsandletters.get(oldcallsign[3])
+        if value is not None:
+            print("Numsandletters Found!")
+            newcallsign = newcallsign + str(value)
+    except:
+        print("numorletter not found")
+    try:
+        value = numsandletters.get(oldcallsign[4])
+        if value is not None:
+            print("Numsandletters Found!")
+            newcallsign = newcallsign + str(value)
+    except:
+        print("numorletter not found")
+    try:
+        value = numsandletters.get(oldcallsign[5])
+        if value is not None:
+            print("Numsandletters Found!")
+            newcallsign = newcallsign + str(value)
+    except:
+        print("numorletter not found")
+    try:
+        value = numsandletters.get(oldcallsign[6])
+        if value is not None:
+            print("Numsandletters Found!")
+            newcallsign = newcallsign + str(value)
+    except:
+        print("numorletter not found")
+    print(newcallsign)
+    wait(lambda: engine.isBusy())
+    engine.say(newcallsign)
+    engine.runAndWait()
+    return
 
 # COMMAND PARSING
-
-
 class CommandErrorException(Exception):
     def __init__(self, message):
         self.message = message
@@ -88,6 +122,7 @@ def parseCommand(command: str = None):
     try:
         match baseCommand:
             case "d":
+                oldcallsign = plane.callsign
                 if plane.mode in PlaneMode.GROUND_MODES:
                     raise CommandErrorException("Cannot descend while on the ground")
                 plane.targetAltitude = int(text.split(" ")[2]) * 100
@@ -97,20 +132,30 @@ def parseCommand(command: str = None):
                     plane.vertSpeed = DESCENT_RATE
 
                 if plane.targetAltitude >= TRANSITION_LEVEL:
-                    messagesToSpeak.append(f"Descend flight level {' '.join(list(str(plane.targetAltitude // 100)))}")
+                    callsigntts(oldcallsign)
+                    engine.say(f"Descend flight level {' '.join(list(str(plane.targetAltitude // 100)))}")
+                    engine.runAndWait()
                 else:
-                    messagesToSpeak.append(f"Descend altitude {' '.join(list(str(plane.targetAltitude // 100)))}")
+                    callsigntts(oldcallsign)
+                    engine.say(f"Descend altitude {' '.join(list(str(plane.targetAltitude // 100)))}")
+                    engine.runAndWait()
             case "c":
+                oldcallsign = plane.callsign
                 if plane.mode in PlaneMode.GROUND_MODES:
                     raise CommandErrorException("Cannot climb while on the ground")
                 plane.targetAltitude = int(text.split(" ")[2]) * 100
                 plane.vertSpeed = CLIMB_RATE
 
                 if plane.targetAltitude >= TRANSITION_LEVEL:
-                    messagesToSpeak.append(f"Climb flight level {' '.join(list(str(plane.targetAltitude // 100)))}")
+                    callsigntts(oldcallsign)
+                    engine.say(f"Climb flight level {' '.join(list(str(plane.targetAltitude // 100)))}")
+                    engine.runAndWait()
                 else:
-                    messagesToSpeak.append(f"Climb altitude {' '.join(list(str(plane.targetAltitude // 100)))}")
+                    callsigntts(oldcallsign)
+                    engine.say(f"Climb altitude {' '.join(list(str(plane.targetAltitude // 100)))}")
+                    engine.runAndWait()
             case "tl":
+                oldcallsign = plane.callsign
                 if plane.mode in PlaneMode.GROUND_MODES:
                     raise CommandErrorException("Cannot change heading while on the ground")
                 if plane.holdStartTime is not None:  # end holding
@@ -119,9 +164,11 @@ def parseCommand(command: str = None):
                 plane.targetHeading = int(text.split(" ")[2]) % 360
                 plane.turnDir = "L"
                 # plane.heading = int(text.split(" ")[2])
-
-                messagesToSpeak.append(f"Turn left heading {' '.join(list(str(plane.targetHeading).zfill(3)))}")
+                callsigntts(oldcallsign)
+                engine.say(f"Turn left heading {' '.join(list(str(plane.targetHeading).zfill(3)))}")
+                engine.runAndWait()
             case "tr":
+                oldcallsign = plane.callsign
                 if plane.mode in PlaneMode.GROUND_MODES:
                     raise CommandErrorException("Cannot change heading while on the ground")
                 if plane.holdStartTime is not None:  # end holding
@@ -129,9 +176,11 @@ def parseCommand(command: str = None):
                 plane.mode = PlaneMode.HEADING
                 plane.targetHeading = int(text.split(" ")[2]) % 360
                 plane.turnDir = "R"
-
-                messagesToSpeak.append(f"Turn right heading {' '.join(list(str(plane.targetHeading).zfill(3)))}")
+                callsigntts(oldcallsign)
+                engine.say(f"Turn right heading {' '.join(list(str(plane.targetHeading).zfill(3)))}")
+                engine.runAndWait()
             case "r":
+                oldcallsign = plane.callsign
                 if plane.mode in PlaneMode.GROUND_MODES:
                     raise CommandErrorException("Cannot change heading while on the ground")
                 if plane.holdStartTime is not None:  # end holding
@@ -140,9 +189,11 @@ def parseCommand(command: str = None):
                 plane.targetHeading = plane.heading + int(text.split(" ")[2]) % 360
                 plane.targetHeading = plane.targetHeading % 360
                 plane.turnDir = "R"
-
-                messagesToSpeak.append(f"Turn right by {int(text.split(' ')[2]) % 360} degrees")
+                callsigntts(oldcallsign)
+                engine.say(f"Turn right by {int(text.split(' ')[2]) % 360} degrees")
+                engine.runAndWait()
             case "l":
+                oldcallsign = plane.callsign
                 if plane.mode in PlaneMode.GROUND_MODES:
                     raise CommandErrorException("Cannot change heading while on the ground")
                 if plane.holdStartTime is not None:  # end holding
@@ -151,15 +202,19 @@ def parseCommand(command: str = None):
                 plane.targetHeading = plane.heading - int(text.split(' ')[2]) % 360
                 plane.targetHeading = plane.targetHeading % 360
                 plane.turnDir = "L"
-
-                messagesToSpeak.append(f"Turn left by {int(text.split(' ')[2]) % 360} degrees")
+                callsigntts(oldcallsign)
+                engine.say(f"Turn left by {int(text.split(' ')[2]) % 360} degrees")
+                engine.runAndWait()
             case "sp":
+                oldcallsign = plane.callsign
                 if plane.mode in PlaneMode.GROUND_MODES:
                     raise CommandErrorException("Ground speed is fixed")
                 plane.targetSpeed = int(text.split(" ")[2])
-
-                messagesToSpeak.append(f"Speed {' '.join(list(str(plane.targetSpeed)))}")
+                callsigntts(oldcallsign)
+                engine.say(f"Speed {' '.join(list(str(plane.targetSpeed)))}")
+                engine.runAndWait()
             case "rond":
+                oldcallsign = plane.callsign
                 if plane.mode == PlaneMode.FLIGHTPLAN:
                     raise CommandErrorException("Already following a flightplan")
                 if plane.mode in PlaneMode.GROUND_MODES:
@@ -177,9 +232,11 @@ def parseCommand(command: str = None):
 
                 plane.mode = PlaneMode.FLIGHTPLAN
                 plane.flightPlan.route.initial = True
-
-                messagesToSpeak.append(f"Resume own navigation direct {text.split(' ')[2]}")
+                callsigntts(oldcallsign)
+                engine.say(f"Resume own navigation direct {text.split(' ')[2]}")
+                engine.runAndWait()
             case "pd":
+                oldcallsign = plane.callsign
                 if plane.mode == PlaneMode.HEADING:
                     raise CommandErrorException("Currently on headings")
                 if plane.mode in PlaneMode.GROUND_MODES:
@@ -196,27 +253,35 @@ def parseCommand(command: str = None):
                     raise CommandErrorException("Fix not found")
 
                 # plane.flightPlan.route.initial = True
-
-                messagesToSpeak.append(f"Proceed direct {text.split(' ')[2]}")
+                callsigntts(oldcallsign)
+                engine.say(f"Proceed direct {text.split(' ')[2]}")
+                engine.runAndWait()
             case "sq":
+                oldcallsign = plane.callsign
                 plane.squawk = int(text.split(" ")[2])
-
-                messagesToSpeak.append(f"Squawk {list(' '.join(str(plane.squawk).zfill(4)))}")
+                callsigntts(oldcallsign)
+                engine.say(f"Squawk {list(' '.join(str(plane.squawk).zfill(4)))}")
+                engine.runAndWait()
             case "hold":
+                oldcallsign = plane.callsign
                 if plane.mode in PlaneMode.GROUND_MODES:
                     raise CommandErrorException("Cannot enter hold while on the ground")
                 plane.holdFix = text.split(" ")[2]
-
-                messagesToSpeak.append(f"Hold at {text.split(' ')[2]}")
+                callsigntts(oldcallsign)
+                engine.say(f"Hold at {text.split(' ')[2]}")
+                engine.runAndWait()
             case "star":
+                oldcallsign = plane.callsign
                 if plane.mode in PlaneMode.GROUND_MODES:
                     raise CommandErrorException("Cannot assign STAR while on the ground")
                 starData, extraFixes = loadStarAndFixData(plane.flightPlan.destination)
                 FIXES.update(extraFixes)
                 plane.flightPlan.route.fixes.extend(starData[text.split(" ")[2]][ACTIVE_RUNWAYS[plane.flightPlan.destination]].split(" "))
-
-                messagesToSpeak.append(f"{text.split(' ')[2]} arrival")
+                callsigntts(oldcallsign)
+                engine.say(f"{text.split(' ')[2]} arrival")
+                engine.runAndWait()
             case "ils":
+                oldcallsign = plane.callsign
                 if plane.mode in PlaneMode.GROUND_MODES:
                     raise CommandErrorException("Cannot assign ILS approach while on the ground")
                 if plane.mode == PlaneMode.FLIGHTPLAN:
@@ -226,17 +291,20 @@ def parseCommand(command: str = None):
 
                     runwayData = loadRunwayData(plane.flightPlan.destination)[ACTIVE_RUNWAYS[plane.flightPlan.destination]]
                     plane.clearedILS = runwayData
-
-                    messagesToSpeak.append(f"Cleared ILS runway {ACTIVE_RUNWAYS[plane.flightPlan.destination]}")
+                    callsigntts(oldcallsign)
+                    engine.say(f"Cleared ILS runway {ACTIVE_RUNWAYS[plane.flightPlan.destination]}")
+                    engine.runAndWait()
                 except FileNotFoundError:
                     pass
                 except KeyError:
                     pass
             case "lvl":
+                oldcallsign = plane.callsign
                 lvlFix = text.split(" ")[2]
                 plane.lvlCoords = FIXES[lvlFix]
-
-                messagesToSpeak.append(f"Be level {lvlFix}")
+                callsigntts(oldcallsign)
+                engine.say(f"Be level {lvlFix}")
+                engine.runAndWait()
             case "ho":  # BIN EM
                 # if text.split(" ")[2] == "KKT":  # TODO: choose airport
                 index = planes.index(plane)
@@ -246,11 +314,13 @@ def parseCommand(command: str = None):
                 sock.close()
                 # window.aircraftTable.removeRow(index)
             case "hoai":
+                oldcallsign = plane.callsign
                 plane.mode = PlaneMode.HEADING
                 plane.targetAltitude = 2000
                 plane.vertSpeed = DESCENT_RATE
                 plane.dieOnReaching2K = True
             case "taxi":
+                oldcallsign = plane.callsign
                 if plane.mode not in PlaneMode.GROUND_MODES:
                     raise CommandErrorException("Plane is not currently in a state to taxi")
                 points = text.split(" ")
@@ -274,6 +344,7 @@ def parseCommand(command: str = None):
                 plane.groundRoute = route
                 plane.speed = TAXI_SPEED
             case "stand":
+                oldcallsign = plane.callsign
                 if not (plane.mode == PlaneMode.GROUND_STATIONARY or plane.mode == PlaneMode.GROUND_TAXI):
                     raise CommandErrorException("Plane is not currently in a state to taxi into stand")
                 points = text.split(" ")
@@ -289,6 +360,7 @@ def parseCommand(command: str = None):
                 plane.groundRoute = route + ["STAND" + stand]
                 plane.speed = TAXI_SPEED
             case "push":
+                oldcallsign = plane.callsign
                 if plane.mode != PlaneMode.GROUND_STATIONARY:
                     raise CommandErrorException("Currently moving")
                 if plane.stand is None:
